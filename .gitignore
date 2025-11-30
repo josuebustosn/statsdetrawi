@@ -40,8 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
 # TrawiStats specific
 *.pyc
 __pycache__/
 .Python
+/data/
 
