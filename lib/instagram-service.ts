@@ -26,7 +26,7 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
         const venezuelaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Caracas' }));
         const hours = venezuelaTime.getHours();
         const minutes = venezuelaTime.getMinutes();
-        const todayStr = venezuelaTime.toISOString().split('T')[0];
+        const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
 
         // Debug Log (Temporary, to verify it works)
         console.log(`[Time Check] VZLA: ${hours}:${minutes.toString().padStart(2, '0')} | Window Active: ${hours === 23 && minutes >= 50}`);

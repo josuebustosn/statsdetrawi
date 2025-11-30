@@ -57,7 +57,7 @@ export function getHistory(username: string): DailyStats[] {
 export function saveDailyStats(username: string, followers: number): DailyStats[] {
     const data = readHistory();
     const history = data[username] || [];
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
 
     const existingEntryIndex = history.findIndex(h => h.date === today);
 
@@ -121,7 +121,7 @@ export function saveCachedProfile(username: string, followers: number, isEndOfDa
         followers,
         lastUpdated: Date.now(),
         expiresAt,
-        lastEndOfDaySync: isEndOfDaySync ? new Date().toISOString().split('T')[0] : existingData.lastEndOfDaySync
+        lastEndOfDaySync: isEndOfDaySync ? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }) : existingData.lastEndOfDaySync
     };
     fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
 }
