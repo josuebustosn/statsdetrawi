@@ -14,7 +14,28 @@ export interface InstagramProfile {
     biography: string;
 }
 
+const activeRequests = new Map<string, Promise<InstagramProfile | null>>();
+
 export async function getInstagramProfile(username: string): Promise<InstagramProfile | null> {
+    // Deduplication: If a request is already in progress for this user, return it
+    if (activeRequests.has(username)) {
+        console.log(`[Deduplication] Reusing active request for ${username}`);
+        return activeRequests.get(username)!;
+    }
+
+    const promise = (async () => {
+        try {
+            return await fetchProfile(username);
+        } finally {
+            activeRequests.delete(username);
+        }
+    })();
+
+    activeRequests.set(username, promise);
+    return promise;
+}
+
+async function fetchProfile(username: string): Promise<InstagramProfile | null> {
     try {
         // 1. Check Cache & End of Day Logic
         const cached = getCachedProfile(username);
