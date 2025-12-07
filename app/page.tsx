@@ -6,6 +6,8 @@ import GrowthCalendar from '@/components/GrowthCalendar';
 import Calculators from '@/components/Calculators';
 import ProjectionChart from '@/components/ProjectionChart';
 import ThemeToggle from '@/components/ThemeToggle';
+import MusicPlayer from '@/components/MusicPlayer';
+import ShareMetrics from '@/components/ShareMetrics';
 
 import Image from 'next/image';
 
@@ -73,7 +75,7 @@ export default function Home() {
             style={{ borderRadius: '8px', transition: 'transform 0.2s ease' }}
             className="logo-hover"
           />
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.1</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.2</h1>
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <a
@@ -111,7 +113,6 @@ export default function Home() {
 
         {/* Bottom Section: Calculators */}
         <section>
-          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', opacity: 0.8 }}>Herramientas</h2>
           <Calculators
             currentFollowers={data?.profile?.followers || 0}
             history={data?.history || []}
@@ -125,7 +126,18 @@ export default function Home() {
             history={data?.history || []}
           />
         </section>
+
+        {/* Share Metrics */}
+        <section>
+          <ShareMetrics
+            currentFollowers={data?.profile?.followers || 0}
+            history={data?.history || []}
+          />
+        </section>
       </div>
+
+      {/* Music Easter Egg */}
+      <MusicPlayer />
     </main>
   );
 }

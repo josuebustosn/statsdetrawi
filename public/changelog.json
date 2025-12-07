@@ -1,5 +1,40 @@
 [
     {
+        "version": "1.2",
+        "date": "2025-12-07",
+        "title": "Easter Egg Musical y Compartir Logros",
+        "changes": [
+            {
+                "type": "feature",
+                "description": "🎵 Easter egg musical con canciones de Rawi rotando diariamente"
+            },
+            {
+                "type": "feature",
+                "description": "Visualizador de audio en tiempo real cuando la música está activa"
+            },
+            {
+                "type": "feature",
+                "description": "7 canciones trawitizadas: Triwikini, #Tráwico, La Noche Que No Había Trawi, y más"
+            },
+            {
+                "type": "feature",
+                "description": "📤 Botón para compartir logros: genera imágenes de métricas (día/semana/mes)"
+            },
+            {
+                "type": "feature",
+                "description": "Copiar imagen al portapapeles o descargar como PNG"
+            },
+            {
+                "type": "feature",
+                "description": "🎯 Barra de progreso hacia 10K seguidores integrada en proyección"
+            },
+            {
+                "type": "feature",
+                "description": "Muestra seguidores faltantes y fecha estimada para alcanzar meta"
+            }
+        ]
+    },
+    {
         "version": "1.1",
         "date": "2025-12-07",
         "title": "Mejoras de Estabilidad y UI",

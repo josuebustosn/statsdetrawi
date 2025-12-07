@@ -28,6 +28,37 @@ interface ProjectionChartProps {
 export default function ProjectionChart({ history, currentFollowers }: ProjectionChartProps) {
     const [simulatedGrowth, setSimulatedGrowth] = useState<string>('');
 
+    // Calculate average daily growth for estimates
+    const avgDailyGrowth = useMemo(() => {
+        if (history.length < 2) return 0;
+        const today = new Date().toISOString().split('T')[0];
+        const completedDays = history.filter(h => h.date !== today);
+        if (completedDays.length === 0) return 0;
+        const recentHistory = completedDays.slice(-7);
+        return recentHistory.reduce((acc, day) => acc + day.change, 0) / recentHistory.length;
+    }, [history]);
+
+    // Calculate days to 10K
+    const daysTo10K = useMemo(() => {
+        const growthRate = simulatedGrowth ? parseFloat(simulatedGrowth) : avgDailyGrowth;
+        if (growthRate <= 0 || currentFollowers >= 10000) return null;
+        const remaining = 10000 - currentFollowers;
+        return Math.ceil(remaining / growthRate);
+    }, [currentFollowers, avgDailyGrowth, simulatedGrowth]);
+
+    // Format estimated date
+    const estimatedDate = useMemo(() => {
+        if (!daysTo10K) return null;
+        const date = new Date();
+        date.setDate(date.getDate() + daysTo10K);
+        return date.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            timeZone: 'America/Caracas'
+        });
+    }, [daysTo10K]);
+
     const data = useMemo(() => {
         if (!history || history.length < 2) return [];
 
@@ -41,28 +72,15 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         }));
 
         // 2. Calculate Growth Rate
-        let avgDailyGrowth = 0;
+        let growthRate = 0;
 
         if (simulatedGrowth && parseFloat(simulatedGrowth) > 0) {
-            avgDailyGrowth = parseFloat(simulatedGrowth);
+            growthRate = parseFloat(simulatedGrowth);
         } else {
-            // Exclude today from average calculation because it's incomplete
-            const today = new Date().toISOString().split('T')[0];
-            const completedDays = history.filter(h => h.date !== today);
-
-            if (completedDays.length === 0) {
-                // If we only have today's data, we can't project based on history yet.
-                // Unless we want to use today's partial data as a fallback, but user requested to ignore it.
-                avgDailyGrowth = 0;
-            } else {
-                // Average of last 7 COMPLETED days
-                const recentHistory = completedDays.slice(-7);
-                const totalGrowth = recentHistory.reduce((acc, day) => acc + day.change, 0);
-                avgDailyGrowth = totalGrowth / recentHistory.length;
-            }
+            growthRate = avgDailyGrowth;
         }
 
-        if (avgDailyGrowth <= 0) return chartData; // No growth to project
+        if (growthRate <= 0) return chartData; // No growth to project
 
         // 3. Project Future
         const lastDay = history[history.length - 1];
@@ -81,7 +99,7 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         while (currentCount < maxTarget * 1.1 && daysProjected < maxDays) {
             daysProjected++;
             currentDate.setDate(currentDate.getDate() + 1);
-            currentCount += avgDailyGrowth;
+            currentCount += growthRate;
 
             chartData.push({
                 date: currentDate.toISOString().split('T')[0],
@@ -93,7 +111,7 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         }
 
         return chartData;
-    }, [history, simulatedGrowth]);
+    }, [history, simulatedGrowth, avgDailyGrowth]);
 
     if (history.length === 0) {
         return (
@@ -117,12 +135,16 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         return tickItem.toString();
     };
 
+    // Progress bar calculations
+    const progress = Math.min((currentFollowers / 10000) * 100, 100);
+    const followersRemaining = Math.max(0, 10000 - currentFollowers);
+
     return (
-        <div className="glass-panel" style={{ padding: '2rem', marginTop: '2rem' }}>
+        <div className="glass-panel" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h3 style={{ fontSize: '1.5rem' }}>Proyección de Crecimiento</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Simular Crecimiento Diario:</label>
+                    <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Simular crecimiento (diario):</label>
                     <input
                         type="number"
                         value={simulatedGrowth}
@@ -212,6 +234,66 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
                         ))}
                     </ComposedChart>
                 </ResponsiveContainer>
+            </div>
+
+            {/* 10K Progress Bar */}
+            <div style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '12px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                }}>
+                    <span style={{ fontWeight: '600' }}>🎯 Meta: 10,000 seguidores</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        {currentFollowers.toLocaleString('en-US')} / 10,000
+                    </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{
+                    width: '100%',
+                    height: '12px',
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    marginBottom: '0.8rem'
+                }}>
+                    <div style={{
+                        width: `${progress}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, var(--primary), var(--accent))',
+                        borderRadius: '6px',
+                        transition: 'width 1s ease'
+                    }} />
+                </div>
+
+                {/* Stats */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-muted)'
+                }}>
+                    <span>
+                        Faltan: <span style={{ color: 'var(--foreground)', fontWeight: '600' }}>
+                            {followersRemaining.toLocaleString('en-US')}
+                        </span>
+                    </span>
+                    {estimatedDate && daysTo10K && (
+                        <span>
+                            Estimado: <span style={{ color: 'var(--success)', fontWeight: '600' }}>
+                                {estimatedDate}
+                            </span>
+                            <span style={{ opacity: 0.7 }}> (~{daysTo10K} días)</span>
+                        </span>
+                    )}
+                </div>
             </div>
         </div>
     );

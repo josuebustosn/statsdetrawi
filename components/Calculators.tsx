@@ -94,6 +94,14 @@ export default function Calculators({ currentFollowers, history }: { currentFoll
                         </div>
                         <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{calculateCost(10000)}</span>
                     </div>
+
+                    {/* Fixed 100k Milestone */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>Para llegar a <strong>100.000</strong></span>
+                        </div>
+                        <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{calculateCost(100000)}</span>
+                    </div>
                 </div>
             </div>
 

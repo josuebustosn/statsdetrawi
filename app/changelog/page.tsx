@@ -50,7 +50,7 @@ export default function ChangelogPage() {
                         style={{ borderRadius: '8px' }}
                         className="logo-hover"
                     />
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.1</h1>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.2</h1>
                 </Link>
                 <ThemeToggle />
             </header>
@@ -117,7 +117,23 @@ export default function ChangelogPage() {
                 </div>
             )}
 
-            <footer style={{ textAlign: 'center', marginTop: '3rem', padding: '1rem', opacity: 0.6 }}>
+            {/* Easter egg credit */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginTop: '3rem',
+                opacity: 0.7
+            }}>
+                <Image
+                    src="/Trawayana.png"
+                    alt="Trawayana"
+                    width={120}
+                    height={120}
+                    style={{ borderRadius: '12px' }}
+                />
+            </div>
+
+            <footer style={{ textAlign: 'center', marginTop: '2rem', padding: '1rem', opacity: 0.6 }}>
                 <Link href="/" style={{ color: 'var(--primary)' }}>← Volver al Dashboard</Link>
             </footer>
         </main>
