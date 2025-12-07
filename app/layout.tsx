@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TrawiStats",
+  title: "TrawiStats 1.1",
   description: "Monitor de crecimiento de seguidores para Trawi Viajes",
   icons: {
     icon: '/trawi-logo.jpg',

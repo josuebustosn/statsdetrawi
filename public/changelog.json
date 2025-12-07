@@ -1,0 +1,112 @@
+[
+    {
+        "version": "1.1",
+        "date": "2025-12-07",
+        "title": "Mejoras de Estabilidad y UI",
+        "changes": [
+            {
+                "type": "fix",
+                "description": "Configurado cron jobs para actualizaciones automáticas cada 2 horas"
+            },
+            {
+                "type": "fix",
+                "description": "Agregado sync automático a las 23:50 Venezuela para cierre diario"
+            },
+            {
+                "type": "fix",
+                "description": "PM2 configurado con límite de memoria de 150MB para servidor de 512MB RAM"
+            },
+            {
+                "type": "fix",
+                "description": "Rotación de logs con pm2-logrotate para evitar llenar disco"
+            },
+            {
+                "type": "fix",
+                "description": "Detección automática de python/python3 según sistema operativo"
+            },
+            {
+                "type": "feature",
+                "description": "Contador de seguidores con animación tipo odómetro"
+            },
+            {
+                "type": "feature",
+                "description": "Badge '+X hoy' mostrando cambio del día actual"
+            },
+            {
+                "type": "feature",
+                "description": "Indicador 'Actualizado hace X minutos'"
+            },
+            {
+                "type": "feature",
+                "description": "Skeleton loader mientras carga datos"
+            },
+            {
+                "type": "feature",
+                "description": "Badge '+X este mes' en calendario de crecimiento"
+            },
+            {
+                "type": "feature",
+                "description": "Hover effects en tarjetas del calendario y paneles"
+            },
+            {
+                "type": "feature",
+                "description": "Logo clickeable que abre Instagram"
+            },
+            {
+                "type": "feature",
+                "description": "Sistema de changelog con página dedicada"
+            }
+        ]
+    },
+    {
+        "version": "1.0",
+        "date": "2025-11-29",
+        "title": "Lanzamiento Inicial",
+        "changes": [
+            {
+                "type": "feature",
+                "description": "Dashboard de monitoreo de seguidores de Instagram"
+            },
+            {
+                "type": "feature",
+                "description": "Integración con Apify para obtener datos de seguidores"
+            },
+            {
+                "type": "feature",
+                "description": "Calendario de crecimiento de últimos 30 días"
+            },
+            {
+                "type": "feature",
+                "description": "Calculadora de costo por seguidor (CPF)"
+            },
+            {
+                "type": "feature",
+                "description": "Calculadora inversa: CPF desde gasto diario"
+            },
+            {
+                "type": "feature",
+                "description": "Gráfico de proyección de crecimiento"
+            },
+            {
+                "type": "feature",
+                "description": "Sistema de caché de 2 horas para optimizar consumo de API"
+            },
+            {
+                "type": "feature",
+                "description": "Modo claro/oscuro"
+            },
+            {
+                "type": "deploy",
+                "description": "Deploy en DigitalOcean con PM2 y Nginx"
+            },
+            {
+                "type": "deploy",
+                "description": "SSL/HTTPS configurado con Let's Encrypt"
+            },
+            {
+                "type": "deploy",
+                "description": "Dominio configurado: stats.trawi.net"
+            }
+        ]
+    }
+]

@@ -14,13 +14,15 @@ interface DashboardData {
     followers: number;
     profilePicUrl?: string;
   };
-  history: any[]; // We can refine this if we export the type from storage
+  history: { date: string; followers: number; change: number }[];
+  lastUpdated?: number;
 }
 
 export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lastFetch, setLastFetch] = useState<number | null>(null);
 
   const username = 'trawi.viajes';
 
@@ -31,6 +33,7 @@ export default function Home() {
         if (!res.ok) throw new Error('Failed to fetch');
         const json = await res.json();
         setData(json);
+        setLastFetch(Date.now());
         setError('');
       } catch (err) {
         console.error(err);
@@ -45,20 +48,51 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate today's change from history
+  const getTodayChange = (): number => {
+    if (!data?.history || data.history.length === 0) return 0;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
+    const todayEntry = data.history.find(h => h.date === today);
+    return todayEntry?.change || 0;
+  };
+
   return (
     <main className="container">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', marginTop: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <a
+          href={`https://instagram.com/${username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}
+        >
           <Image
             src="/trawi-logo.jpg"
             alt="Trawi Logo"
             width={50}
             height={50}
-            style={{ borderRadius: '8px' }}
+            style={{ borderRadius: '8px', transition: 'transform 0.2s ease' }}
+            className="logo-hover"
           />
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.1</h1>
+        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <a
+            href="/changelog"
+            style={{
+              fontSize: '0.85rem',
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '8px',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--card-border)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🎉 Cambios
+          </a>
+          <ThemeToggle />
         </div>
-        <ThemeToggle />
       </header>
 
       <div className="grid" style={{ gap: '2rem' }}>
@@ -69,6 +103,8 @@ export default function Home() {
             followers={data?.profile?.followers || 0}
             profilePicUrl={data?.profile?.profilePicUrl || ''}
             loading={loading && !data}
+            todayChange={getTodayChange()}
+            lastUpdated={lastFetch || undefined}
           />
           <GrowthCalendar history={data?.history || []} />
         </div>

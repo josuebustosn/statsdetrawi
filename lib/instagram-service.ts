@@ -77,7 +77,9 @@ async function fetchProfile(username: string): Promise<InstagramProfile | null> 
         // 2. Run Python Script
         console.log(`Fetching fresh data for ${username} via Apify...`);
         const scriptPath = path.join(process.cwd(), 'scripts', 'get_followers.py');
-        const { stdout, stderr } = await execAsync(`python3 "${scriptPath}" "${username}"`, { env: process.env });
+        // Use 'python' on Windows, 'python3' on Linux/Mac
+        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+        const { stdout, stderr } = await execAsync(`${pythonCmd} "${scriptPath}" "${username}"`, { env: process.env });
 
         if (stderr) {
             console.error('Script stderr:', stderr);
