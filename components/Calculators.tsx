@@ -9,7 +9,7 @@ interface DailyStats {
 }
 
 export default function Calculators({ currentFollowers, history }: { currentFollowers: number, history: DailyStats[] }) {
-    const [cpf, setCpf] = useState<string>('0.50');
+    const [cpf, setCpf] = useState<string>('0.12');
     const [targetFollowers, setTargetFollowers] = useState<string>('');
     const [dailySpend, setDailySpend] = useState<string>('0');
     const [dailyGrowth, setDailyGrowth] = useState<string>('0');

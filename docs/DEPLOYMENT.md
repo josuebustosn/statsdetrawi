@@ -303,6 +303,72 @@ Agrega esta línea:
 
 ---
 
+## Actualizaciones Automáticas de Seguidores
+
+El sistema actualiza la estadística de seguidores automáticamente mediante cron jobs.
+
+### Configuración actual (Diciembre 2024)
+
+```bash
+# Ver configuración actual
+crontab -l
+```
+
+**Cron jobs configurados:**
+```
+# Actualizar cada 2 horas
+0 */2 * * * curl -s "http://localhost:3000/api/followers?username=trawi.viajes" > /dev/null 2>&1
+
+# Sync fin de día 23:51 Venezuela = 03:51 UTC
+51 3 * * * curl -s "http://localhost:3000/api/followers?username=trawi.viajes" > /dev/null 2>&1
+```
+
+### Cómo funciona
+
+1. **Cron cada 2 horas**: Hace un request al API, forzando actualización si el caché de 2 horas expiró
+2. **Cron 23:51 Venezuela**: Dispara el "End of Day sync" - la lógica en `instagram-service.ts` detecta que está en la ventana 23:50-23:59 y fuerza actualización
+3. **El código interno** (líneas 56-63 de `lib/instagram-service.ts`) marca `lastEndOfDaySync` para no repetir el sync ese día
+
+### Verificar que funciona
+```bash
+pm2 logs trawistats --lines 50
+```
+Buscar: `Fetching fresh data`, `[End of Day] Force updating`
+
+---
+
+## Estabilidad del Servidor (512MB RAM)
+
+### PM2 con límite de memoria
+```bash
+pm2 start npm --name "trawistats" --max-memory-restart 150M -- start
+```
+Reinicia automáticamente si supera 150MB RAM.
+
+### Rotación de logs (evita llenar disco)
+```bash
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 5M
+pm2 set pm2-logrotate:retain 3
+```
+
+### Si el servidor se cuelga
+```bash
+# Verificar estado
+pm2 status
+pm2 logs trawistats --lines 100
+
+# Reiniciar si es necesario
+pm2 restart trawistats
+
+# Si PM2 se corrompió
+pm2 kill
+pm2 start npm --name "trawistats" --max-memory-restart 150M -- start
+pm2 save
+```
+
+---
+
 ## Resumen de URLs
 
 - **App**: https://stats.trawi.net
