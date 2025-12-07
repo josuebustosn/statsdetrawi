@@ -9,10 +9,70 @@ interface ShareMetricsProps {
 
 type Period = 'today' | 'week' | 'month';
 
+// Simple box blur for iOS compatibility (canvas filter doesn't work in Safari)
+function applyBoxBlur(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+    const tempPixels = new Uint8ClampedArray(pixels);
+
+    const passes = 3; // Multiple passes for smoother blur
+
+    for (let pass = 0; pass < passes; pass++) {
+        // Horizontal pass
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                let r = 0, g = 0, b = 0, a = 0, count = 0;
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = Math.min(Math.max(x + dx, 0), width - 1);
+                    const idx = (y * width + nx) * 4;
+                    r += tempPixels[idx];
+                    g += tempPixels[idx + 1];
+                    b += tempPixels[idx + 2];
+                    a += tempPixels[idx + 3];
+                    count++;
+                }
+                const idx = (y * width + x) * 4;
+                pixels[idx] = r / count;
+                pixels[idx + 1] = g / count;
+                pixels[idx + 2] = b / count;
+                pixels[idx + 3] = a / count;
+            }
+        }
+
+        // Copy to temp for vertical pass
+        tempPixels.set(pixels);
+
+        // Vertical pass
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                let r = 0, g = 0, b = 0, a = 0, count = 0;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    const ny = Math.min(Math.max(y + dy, 0), height - 1);
+                    const idx = (ny * width + x) * 4;
+                    r += tempPixels[idx];
+                    g += tempPixels[idx + 1];
+                    b += tempPixels[idx + 2];
+                    a += tempPixels[idx + 3];
+                    count++;
+                }
+                const idx = (y * width + x) * 4;
+                pixels[idx] = r / count;
+                pixels[idx + 1] = g / count;
+                pixels[idx + 2] = b / count;
+                pixels[idx + 3] = a / count;
+            }
+        }
+
+        tempPixels.set(pixels);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
 export default function ShareMetrics({ currentFollowers, history }: ShareMetricsProps) {
     const [period, setPeriod] = useState<Period>('today');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [successType, setSuccessType] = useState<'copy' | 'download' | 'share' | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const getMetrics = () => {
@@ -52,13 +112,13 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
         };
     };
 
-    const generateImage = async () => {
+    const generateImage = async (): Promise<Blob | null> => {
         setIsGenerating(true);
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas) return null;
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) return null;
 
         const metrics = getMetrics();
         const size = 600;
@@ -75,13 +135,14 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
             bgImage.src = '/Trawayana.png';
         });
 
-        // Draw blurred background (even less blur)
-        ctx.filter = 'blur(10px) brightness(0.4)';
+        // Draw background image
         ctx.drawImage(bgImage, -50, -50, size + 100, size + 100);
-        ctx.filter = 'none';
 
-        // Dark overlay for better readability (less opacity)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        // Apply manual blur (works on iOS/Safari)
+        applyBoxBlur(ctx, size, size, 8);
+
+        // Darken the image (more darkness)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.fillRect(0, 0, size, size);
 
         // Accent line at top
@@ -146,36 +207,120 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
         ctx.textAlign = 'left';
 
         setIsGenerating(false);
-        return canvas.toDataURL('image/png');
+
+        // Return as blob for sharing
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), 'image/png');
+        });
     };
 
-    const handleCopy = async () => {
-        const dataUrl = await generateImage();
-        if (!dataUrl) return;
+    const showFeedback = (type: 'copy' | 'download' | 'share') => {
+        setSuccessType(type);
+        setTimeout(() => setSuccessType(null), 2000);
+    };
 
+    // Copy to clipboard - works on PC and Android
+    const handleCopy = async () => {
+        const blob = await generateImage();
+        if (!blob) return;
+
+        // Check if we're on iOS (doesn't support clipboard well)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+        if (isIOS) {
+            // iOS: Use Web Share API instead
+            await handleShare(blob);
+            return;
+        }
+
+        // PC/Android: Use clipboard
         try {
-            const blob = await (await fetch(dataUrl)).blob();
             await navigator.clipboard.write([
                 new ClipboardItem({ 'image/png': blob })
             ]);
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 2000);
+            showFeedback('copy');
         } catch (e) {
-            // Fallback: download instead
-            handleDownload();
+            // Fallback to share if available
+            if (typeof navigator.share === 'function') {
+                await handleShare(blob);
+            } else {
+                // Final fallback: download
+                downloadBlob(blob);
+                showFeedback('download');
+            }
         }
     };
 
-    const handleDownload = async () => {
-        const dataUrl = await generateImage();
-        if (!dataUrl) return;
+    // Share via Web Share API
+    const handleShare = async (existingBlob?: Blob) => {
+        const blob = existingBlob || await generateImage();
+        if (!blob) return;
 
+        const file = new File([blob], `trawistats-${period}.png`, { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'TrawiStats',
+                    text: `Mira mi crecimiento en @trawi.viajes!`
+                });
+                showFeedback('share');
+                return;
+            } catch (e) {
+                // User cancelled - don't show error
+                return;
+            }
+        }
+
+        // Fallback: download
+        downloadBlob(blob);
+        showFeedback('download');
+    };
+
+    // Download as file
+    const handleDownload = async () => {
+        const blob = await generateImage();
+        if (!blob) return;
+
+        // On mobile, prefer share
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const file = new File([blob], `trawistats-${period}.png`, { type: 'image/png' });
+
+        if (isMobile && navigator.share && navigator.canShare?.({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'TrawiStats',
+                    text: `Mira mi crecimiento en @trawi.viajes!`
+                });
+                showFeedback('share');
+                return;
+            } catch (e) {
+                // User cancelled or error, fall through to download
+            }
+        }
+
+        // Regular download
+        downloadBlob(blob);
+        showFeedback('download');
+    };
+
+    const downloadBlob = (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.download = `trawistats-${period}-${Date.now()}.png`;
-        link.href = dataUrl;
+        link.href = url;
         link.click();
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
+        URL.revokeObjectURL(url);
+    };
+
+    const getButtonLabel = (type: 'copy' | 'download') => {
+        if (successType === 'copy') return '✓ Copiado!';
+        if (successType === 'share') return '✓ Compartido!';
+        if (successType === 'download') return '✓ Descargado!';
+
+        return type === 'copy' ? '📋 Copiar imagen' : '💾 Descargar imagen';
     };
 
     const periods: { value: Period; label: string }[] = [
@@ -253,7 +398,7 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
                         transition: 'all 0.2s ease',
                     }}
                 >
-                    {showSuccess ? '✓ Copiado!' : '📋 Copiar imagen'}
+                    {successType === 'copy' ? '✓ Copiado!' : successType === 'share' ? '✓ Compartido!' : '📋 Copiar imagen'}
                 </button>
                 <button
                     onClick={handleDownload}
@@ -270,7 +415,7 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
                         transition: 'all 0.2s ease',
                     }}
                 >
-                    💾 Descargar imagen
+                    {successType === 'download' ? '✓ Descargado!' : successType === 'share' ? '✓ Compartido!' : '💾 Descargar imagen'}
                 </button>
             </div>
 
