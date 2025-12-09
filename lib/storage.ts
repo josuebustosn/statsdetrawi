@@ -107,13 +107,10 @@ export function getCachedProfile(username: string): { followers: number, lastUpd
     return cache[username] || null;
 }
 
-export function saveCachedProfile(username: string, followers: number, isEndOfDaySync: boolean = false) {
+export function saveCachedProfile(username: string, followers: number, isEndOfDaySync: boolean = false, ttl: number = 2 * 60 * 60 * 1000) {
     const cache = getCacheData();
 
-    // Fixed interval: 2 hours
-    const baseDuration = 2 * 60 * 60 * 1000;
-
-    const expiresAt = Date.now() + baseDuration;
+    const expiresAt = Date.now() + ttl;
 
     const existingData = cache[username] || {};
 

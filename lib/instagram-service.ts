@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import path from 'path';
 import { promisify } from 'util';
 import { getCachedProfile, saveCachedProfile } from './storage';
+import fs from 'fs';
 
 const execAsync = promisify(exec);
 
@@ -88,7 +89,7 @@ async function fetchProfile(username: string): Promise<InstagramProfile | null> 
         const followers = parseInt(stdout.trim(), 10);
 
         if (isNaN(followers)) {
-            throw new Error('Invalid output from Python script');
+            throw new Error(`Invalid output from Python script. Stdout: "${stdout.trim()}" Stderr: "${stderr.trim()}"`);
         }
 
         // 3. Update Cache
@@ -106,9 +107,26 @@ async function fetchProfile(username: string): Promise<InstagramProfile | null> 
     } catch (error) {
         console.error('Error fetching Instagram profile:', error);
 
-        // Fallback to cache if available even if expired
+        // Log error to file for debugging
+        try {
+            const logPath = path.join(process.cwd(), 'debug_error.log');
+            const timestamp = new Date().toISOString();
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            // Include stack trace if available
+            const stack = error instanceof Error ? error.stack : '';
+            const logEntry = `[${timestamp}] Error for ${username}: ${errorMessage}\nStack: ${stack}\n-------------------\n`;
+            fs.appendFileSync(logPath, logEntry);
+        } catch (e) {
+            console.error('Failed to write to log file:', e);
+        }
+
+        // Fallback to cache if available even if expired, and update timestamp to prevent Loop
         const cached = getCachedProfile(username);
         if (cached) {
+            console.log(`[Error Recovery] Using old cache for ${username} and backing off for 15 mins.`);
+            // Update cache with backoff (15 mins) to prevent immediate retry loop
+            saveCachedProfile(username, cached.followers, false, 15 * 60 * 1000);
+
             return {
                 username,
                 fullName: username,
