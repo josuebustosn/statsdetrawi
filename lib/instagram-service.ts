@@ -76,6 +76,12 @@ async function fetchProfile(username: string): Promise<InstagramProfile | null> 
         }
 
         // 2. Run Python Script
+        // SECURITY: Validate username to prevent Command Injection
+        const usernameRegex = /^[a-zA-Z0-9._]+$/;
+        if (!usernameRegex.test(username)) {
+            throw new Error(`Invalid username format: ${username}`);
+        }
+
         console.log(`Fetching fresh data for ${username} via Apify...`);
         const scriptPath = path.join(process.cwd(), 'scripts', 'get_followers.py');
         // Use 'python' on Windows, 'python3' on Linux/Mac
