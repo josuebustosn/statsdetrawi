@@ -2,27 +2,75 @@
     {
         "version": "1.3",
         "date": "2026-02-01",
-        "title": "Selector de Meses y Fix de Timestamp",
+        "title": "Milestones Dinámicos y Proyección Inteligente",
         "changes": [
             {
                 "type": "feature",
-                "description": "📅 Selector de meses en el calendario de crecimiento: ahora puedes ver el historial completo por mes"
+                "description": "📅 Selector de meses en calendario: explora tu historial completo mes por mes"
             },
             {
                 "type": "feature",
-                "description": "Opción para ver 'Últimos 30 días' o seleccionar cualquier mes anterior con datos"
+                "description": "Visualización flexible: 'Últimos 30 días' o selecciona cualquier mes anterior"
             },
             {
                 "type": "feature",
-                "description": "Indicador dinámico de total de crecimiento por período seleccionado"
+                "description": "Total dinámico: indicador de crecimiento se ajusta al período seleccionado"
+            },
+            {
+                "type": "feature",
+                "description": "🎯 Sistema de milestones expandido: 10k, 20k, 50k, 100k, 500k, 1M"
+            },
+            {
+                "type": "feature",
+                "description": "Milestones inteligentes: se marcan automáticamente como completados con ✓"
+            },
+            {
+                "type": "feature",
+                "description": "Formato legible: 10k, 100k, 1M en lugar de números largos"
+            },
+            {
+                "type": "feature",
+                "description": "🧠 Proyección inteligente: algoritmo EMA (Exponential Moving Average) con análisis de tendencias"
+            },
+            {
+                "type": "feature",
+                "description": "Predicción adaptativa: detecta aceleración/desaceleración del crecimiento"
+            },
+            {
+                "type": "feature",
+                "description": "Gráfico dinámico: se ajusta automáticamente al siguiente milestone"
+            },
+            {
+                "type": "feature",
+                "description": "Historial de logros: milestones completados con fechas en badges verdes"
+            },
+            {
+                "type": "feature",
+                "description": "Referencias visuales: líneas de milestone adaptativas (verdes si completado, destacadas si pendiente)"
             },
             {
                 "type": "fix",
-                "description": "🔧 Fix del indicador 'Actualizado hace...': ahora muestra el tiempo real transcurrido"
+                "description": "🔧 Fix crítico: indicador 'Actualizado hace...' ahora muestra tiempo real"
             },
             {
                 "type": "fix",
-                "description": "Actualización del timestamp cada 10 segundos en lugar de 60 para mayor precisión"
+                "description": "Timestamp preciso: actualización cada 10 segundos (antes 60s)"
+            },
+            {
+                "type": "fix",
+                "description": "Claridad en ShareMetrics: 'Mes' → '30d' para indicar últimos 30 días"
+            },
+            {
+                "type": "feature",
+                "description": "✨ UI simplificada: eliminado input de cantidad deseada en calculadora"
+            },
+            {
+                "type": "feature",
+                "description": "Enfoque en milestones: calculadora centrada en objetivos clave"
+            },
+            {
+                "type": "feature",
+                "description": "🗑️ Removida herramienta deprecated: Calculadora de CPF Diario"
             }
         ]
     },

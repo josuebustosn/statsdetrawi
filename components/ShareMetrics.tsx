@@ -202,7 +202,7 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
 
         // Watermark - bottom right
         ctx.textAlign = 'right';
-        ctx.fillText('TrawiStats 1.2 ©', size - 40, size - 50);
+        ctx.fillText('TrawiStats 1.3 ©', size - 40, size - 50);
         ctx.fillText('stats.trawi.net', size - 40, size - 30);
         ctx.textAlign = 'left';
 
@@ -326,7 +326,7 @@ export default function ShareMetrics({ currentFollowers, history }: ShareMetrics
     const periods: { value: Period; label: string }[] = [
         { value: 'today', label: 'Hoy' },
         { value: 'week', label: 'Semana' },
-        { value: 'month', label: 'Mes' },
+        { value: 'month', label: '30d' },
     ];
 
     return (

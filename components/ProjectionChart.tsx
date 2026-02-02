@@ -28,36 +28,81 @@ interface ProjectionChartProps {
 export default function ProjectionChart({ history, currentFollowers }: ProjectionChartProps) {
     const [simulatedGrowth, setSimulatedGrowth] = useState<string>('');
 
-    // Calculate average daily growth for estimates
-    const avgDailyGrowth = useMemo(() => {
+    // Milestones (same as Calculators)
+    const milestones = [10000, 20000, 50000, 100000, 500000, 1000000];
+
+    // Find next milestone
+    const nextMilestone = useMemo(() => {
+        return milestones.find(m => m > currentFollowers) || milestones[milestones.length - 1];
+    }, [currentFollowers]);
+
+    // Calculate SMART average daily growth (weighted + trend analysis)
+    const smartAvgGrowth = useMemo(() => {
         if (history.length < 2) return 0;
+        
         const today = new Date().toISOString().split('T')[0];
         const completedDays = history.filter(h => h.date !== today);
         if (completedDays.length === 0) return 0;
-        const recentHistory = completedDays.slice(-7);
-        return recentHistory.reduce((acc, day) => acc + day.change, 0) / recentHistory.length;
+
+        // Use exponential moving average (EMA) - more weight to recent data
+        const recentDays = completedDays.slice(-14); // Last 2 weeks
+        
+        if (recentDays.length === 0) return 0;
+
+        // Calculate EMA with alpha = 0.3 (gives 70% weight to history, 30% to new data)
+        let ema = recentDays[0].change;
+        const alpha = 0.3;
+        
+        for (let i = 1; i < recentDays.length; i++) {
+            ema = alpha * recentDays[i].change + (1 - alpha) * ema;
+        }
+
+        // Apply trend factor: check if growth is accelerating or decelerating
+        if (recentDays.length >= 7) {
+            const firstWeekAvg = recentDays.slice(0, 7).reduce((sum, d) => sum + d.change, 0) / 7;
+            const secondWeekAvg = recentDays.slice(-7).reduce((sum, d) => sum + d.change, 0) / 7;
+            const trendFactor = secondWeekAvg / firstWeekAvg;
+            
+            // Apply trend but cap it between 0.8 and 1.2 to avoid wild projections
+            const cappedTrend = Math.max(0.8, Math.min(1.2, trendFactor));
+            ema = ema * cappedTrend;
+        }
+
+        return Math.max(0, ema); // Never negative
     }, [history]);
 
-    // Calculate days to 10K
-    const daysTo10K = useMemo(() => {
-        const growthRate = simulatedGrowth ? parseFloat(simulatedGrowth) : avgDailyGrowth;
-        if (growthRate <= 0 || currentFollowers >= 10000) return null;
-        const remaining = 10000 - currentFollowers;
+    // Calculate days to next milestone
+    const daysToMilestone = useMemo(() => {
+        const growthRate = simulatedGrowth ? parseFloat(simulatedGrowth) : smartAvgGrowth;
+        if (growthRate <= 0 || currentFollowers >= nextMilestone) return null;
+        const remaining = nextMilestone - currentFollowers;
         return Math.ceil(remaining / growthRate);
-    }, [currentFollowers, avgDailyGrowth, simulatedGrowth]);
+    }, [currentFollowers, smartAvgGrowth, simulatedGrowth, nextMilestone]);
 
     // Format estimated date
     const estimatedDate = useMemo(() => {
-        if (!daysTo10K) return null;
+        if (!daysToMilestone) return null;
         const date = new Date();
-        date.setDate(date.getDate() + daysTo10K);
+        date.setDate(date.getDate() + daysToMilestone);
         return date.toLocaleDateString('es-ES', {
             day: 'numeric',
-            month: 'short',
+            month: 'long',
             year: 'numeric',
             timeZone: 'America/Caracas'
         });
-    }, [daysTo10K]);
+    }, [daysToMilestone]);
+
+    // Find completion dates for milestones
+    const getMilestoneCompletionDate = (milestone: number) => {
+        const entry = history.find(h => h.followers >= milestone);
+        if (!entry) return null;
+        const date = new Date(entry.date + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+    };
 
     const data = useMemo(() => {
         if (!history || history.length < 2) return [];
@@ -77,7 +122,7 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         if (simulatedGrowth && parseFloat(simulatedGrowth) > 0) {
             growthRate = parseFloat(simulatedGrowth);
         } else {
-            growthRate = avgDailyGrowth;
+            growthRate = smartAvgGrowth;
         }
 
         if (growthRate <= 0) return chartData; // No growth to project
@@ -90,13 +135,14 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         // Connect the lines
         chartData[chartData.length - 1].projected = currentCount;
 
-        const maxTarget = 10000;
+        // Project to next milestone + 10% buffer
+        const maxTarget = nextMilestone * 1.1;
 
-        // Limit projection to 2 years or until max target reached + buffer
+        // Limit projection to 2 years or until max target reached
         let daysProjected = 0;
         const maxDays = 730;
 
-        while (currentCount < maxTarget * 1.1 && daysProjected < maxDays) {
+        while (currentCount < maxTarget && daysProjected < maxDays) {
             daysProjected++;
             currentDate.setDate(currentDate.getDate() + 1);
             currentCount += growthRate;
@@ -111,7 +157,7 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
         }
 
         return chartData;
-    }, [history, simulatedGrowth, avgDailyGrowth]);
+    }, [history, simulatedGrowth, smartAvgGrowth, nextMilestone]);
 
     if (history.length === 0) {
         return (
@@ -131,13 +177,26 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
     };
 
     const formatYAxis = (tickItem: number) => {
+        if (tickItem >= 1000000) return `${(tickItem / 1000000).toFixed(1)}M`;
         if (tickItem >= 1000) return `${(tickItem / 1000).toFixed(1)}k`;
         return tickItem.toString();
     };
 
-    // Progress bar calculations
-    const progress = Math.min((currentFollowers / 10000) * 100, 100);
-    const followersRemaining = Math.max(0, 10000 - currentFollowers);
+    const formatMilestone = (num: number) => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(0)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(0)}k`;
+        return num.toLocaleString('es-ES');
+    };
+
+    // Progress bar calculations for next milestone
+    const previousMilestone = milestones[milestones.indexOf(nextMilestone) - 1] || 0;
+    const progress = ((currentFollowers - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
+    const followersRemaining = Math.max(0, nextMilestone - currentFollowers);
+
+    // Get relevant milestones for graph (visible range)
+    const relevantMilestones = milestones.filter(m => 
+        m <= nextMilestone * 1.2 && m >= currentFollowers * 0.3
+    );
 
     return (
         <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -217,18 +276,20 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
                             activeDot={{ r: 6 }}
                         />
 
-                        {/* Milestones Reference Lines */}
-                        {[1000, 5000, 10000].map(milestone => (
+                        {/* Dynamic Milestones Reference Lines */}
+                        {relevantMilestones.map(milestone => (
                             <ReferenceLine
                                 key={milestone}
                                 y={milestone}
-                                stroke="var(--success)"
+                                stroke={milestone <= currentFollowers ? "var(--success)" : "var(--accent)"}
                                 strokeDasharray="3 3"
+                                strokeOpacity={milestone <= currentFollowers ? 0.5 : 0.8}
                                 label={{
-                                    value: `${milestone / 1000}k`,
+                                    value: formatMilestone(milestone),
                                     position: 'right',
-                                    fill: 'var(--success)',
-                                    fontSize: 12
+                                    fill: milestone <= currentFollowers ? "var(--success)" : "var(--accent)",
+                                    fontSize: 12,
+                                    opacity: milestone <= currentFollowers ? 0.7 : 1
                                 }}
                             />
                         ))}
@@ -236,7 +297,7 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
                 </ResponsiveContainer>
             </div>
 
-            {/* 10K Progress Bar */}
+            {/* Next Milestone Progress Bar */}
             <div style={{
                 marginTop: '1.5rem',
                 padding: '1rem',
@@ -249,9 +310,9 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
                     alignItems: 'center',
                     marginBottom: '0.5rem'
                 }}>
-                    <span style={{ fontWeight: '600' }}>🎯 Meta: 10,000 seguidores</span>
+                    <span style={{ fontWeight: '600' }}>🎯 Meta: {formatMilestone(nextMilestone)} seguidores</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                        {currentFollowers.toLocaleString('en-US')} / 10,000
+                        {currentFollowers.toLocaleString('en-US')} / {formatMilestone(nextMilestone)}
                     </span>
                 </div>
 
@@ -265,7 +326,7 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
                     marginBottom: '0.8rem'
                 }}>
                     <div style={{
-                        width: `${progress}%`,
+                        width: `${Math.min(progress, 100)}%`,
                         height: '100%',
                         background: 'linear-gradient(90deg, var(--primary), var(--accent))',
                         borderRadius: '6px',
@@ -285,15 +346,45 @@ export default function ProjectionChart({ history, currentFollowers }: Projectio
                             {followersRemaining.toLocaleString('en-US')}
                         </span>
                     </span>
-                    {estimatedDate && daysTo10K && (
+                    {estimatedDate && daysToMilestone && (
                         <span>
                             Estimado: <span style={{ color: 'var(--success)', fontWeight: '600' }}>
                                 {estimatedDate}
                             </span>
-                            <span style={{ opacity: 0.7 }}> (~{daysTo10K} días)</span>
+                            <span style={{ opacity: 0.7 }}> (~{daysToMilestone} días)</span>
                         </span>
                     )}
                 </div>
+            </div>
+
+            {/* Completed Milestones */}
+            <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {milestones.filter(m => m <= currentFollowers).map(milestone => {
+                    const completionDate = getMilestoneCompletionDate(milestone);
+                    return (
+                        <div
+                            key={milestone}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.3rem 0.6rem',
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                border: '1px solid var(--success)',
+                                borderRadius: '12px',
+                                fontSize: '0.8rem',
+                                color: 'var(--success)',
+                                opacity: 0.8
+                            }}
+                        >
+                            <span>✓</span>
+                            <span>{formatMilestone(milestone)}</span>
+                            {completionDate && (
+                                <span style={{ opacity: 0.7, fontSize: '0.75rem' }}>({completionDate})</span>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
