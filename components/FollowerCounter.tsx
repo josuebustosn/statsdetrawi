@@ -67,14 +67,17 @@ export default function FollowerCounter({
     const animatedFollowers = useAnimatedNumber(followers, 1200);
     const [timeAgo, setTimeAgo] = useState('');
 
-    // Update time ago every minute
+    // Update time ago every 10 seconds for more accuracy
     useEffect(() => {
-        if (!lastUpdated) return;
+        if (!lastUpdated) {
+            setTimeAgo('');
+            return;
+        }
 
         const updateTimeAgo = () => setTimeAgo(formatTimeAgo(lastUpdated));
-        updateTimeAgo();
+        updateTimeAgo(); // Update immediately
 
-        const interval = setInterval(updateTimeAgo, 60000);
+        const interval = setInterval(updateTimeAgo, 10000); // Update every 10 seconds
         return () => clearInterval(interval);
     }, [lastUpdated]);
 

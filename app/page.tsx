@@ -75,7 +75,7 @@ export default function Home() {
             style={{ borderRadius: '8px', transition: 'transform 0.2s ease' }}
             className="logo-hover"
           />
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.2</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>TrawiStats 1.3</h1>
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <a

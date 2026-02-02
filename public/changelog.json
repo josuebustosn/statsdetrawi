@@ -1,5 +1,32 @@
 [
     {
+        "version": "1.3",
+        "date": "2026-02-01",
+        "title": "Selector de Meses y Fix de Timestamp",
+        "changes": [
+            {
+                "type": "feature",
+                "description": "📅 Selector de meses en el calendario de crecimiento: ahora puedes ver el historial completo por mes"
+            },
+            {
+                "type": "feature",
+                "description": "Opción para ver 'Últimos 30 días' o seleccionar cualquier mes anterior con datos"
+            },
+            {
+                "type": "feature",
+                "description": "Indicador dinámico de total de crecimiento por período seleccionado"
+            },
+            {
+                "type": "fix",
+                "description": "🔧 Fix del indicador 'Actualizado hace...': ahora muestra el tiempo real transcurrido"
+            },
+            {
+                "type": "fix",
+                "description": "Actualización del timestamp cada 10 segundos en lugar de 60 para mayor precisión"
+            }
+        ]
+    },
+    {
         "version": "1.2",
         "date": "2025-12-07",
         "title": "Easter Egg Musical y Compartir Logros",
